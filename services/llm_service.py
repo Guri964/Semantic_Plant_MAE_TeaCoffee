@@ -12,6 +12,10 @@ def get_recommendation(crop, health, disease, severity, colors):
         prompt = f"""A {crop} leaf has been identified as healthy with no signs of disease.
 Provide a brief 2-3 sentence practical recommendation for maintaining the health of this {crop} plant.
 Use simple farmer-friendly language."""
+    elif disease in ('Condition Not Identified', 'No Disease Detected'):
+        prompt = f"""A {crop} leaf looks unhealthy, but the specific disease could not be identified from the photo.
+Provide a brief 2-3 sentence practical recommendation: general care steps and advice to consult a local agricultural expert with a clearer photo.
+Use simple farmer-friendly language. Do not guess a specific disease."""
     else:
         color_str = ', '.join(colors) if colors else 'none detected'
         prompt = f"""A {crop} leaf has been diagnosed with {disease}.

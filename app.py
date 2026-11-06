@@ -5,6 +5,7 @@ from database import init_db
 from routes.auth_routes import auth_bp
 from routes.predict_routes import predict_bp
 from services.model_loader import load_models
+from services.crop_ood import load_calibration
 
 main_bp = Blueprint('main', __name__)
 
@@ -28,6 +29,9 @@ def create_app():
     app.config['CROP_MODEL']   = crop_model
     app.config['HEALTH_MODEL'] = health_model
     app.config['DEVICE']       = device
+    # Optional OOD calibration artifact (scripts/calibrate_crop_ood.py).
+    # Absent -> conservative uncalibrated fallback thresholds are used.
+    app.config['CROP_OOD_CALIBRATION'] = load_calibration()
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)

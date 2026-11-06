@@ -13,6 +13,8 @@ val_transforms = transforms.Compose([
 
 def load_image_bgr(image_path):
     img_bgr = cv2.imread(image_path)
+    if img_bgr is None:
+        raise ValueError(f'Could not decode image: {image_path}')
     img_bgr = cv2.resize(img_bgr, (256, 256))
     return img_bgr
 

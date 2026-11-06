@@ -364,8 +364,9 @@
                 </div>
 
                 <div class="metric-box">
-                  <p class="text-xs text-stone mb-2">Colors detected in diseased area</p>
+                  <p id="res-colors-label" class="text-xs text-stone mb-2">Colors detected in diseased area</p>
                   <div id="res-colors" class="flex flex-wrap gap-1.5"></div>
+                  <div id="res-notes" class="hidden"></div>
                 </div>
 
                 <div class="metric-box" id="severity-box">
@@ -585,8 +586,13 @@
       healthBadge.textContent = r.predicted_health.charAt(0).toUpperCase() + r.predicted_health.slice(1);
 
       const sevBadge = document.getElementById('res-severity-badge');
-      sevBadge.className = `badge badge-${r.severity.toLowerCase()}`;
-      sevBadge.textContent = r.severity;
+      if (r.predicted_health === 'healthy' || r.severity === 'None') {
+        sevBadge.className = 'badge badge-healthy';
+        sevBadge.textContent = 'No disease';
+      } else {
+        sevBadge.className = `badge badge-${r.severity.toLowerCase()}`;
+        sevBadge.textContent = r.severity;
+      }
 
       document.getElementById('res-match-score').textContent =
         `Knowledge base match score: ${(r.match_score * 100).toFixed(0)}%`;
@@ -605,13 +611,33 @@
       healthBar.style.width      = `${r.health_confidence}%`;
 
       const patternEl = document.getElementById('res-pattern');
-      patternEl.textContent = r.predicted_pattern && r.predicted_pattern !== 'none'
-        ? r.predicted_pattern.charAt(0).toUpperCase() + r.predicted_pattern.slice(1)
-        : r.predicted_health === 'healthy' ? 'No disease pattern' : 'Not detected';
+      const patternLabels = {
+        yellowing:    'Yellowing / chlorosis',
+        powdery:      'Powdery white growth',
+        dark_coating: 'Dark / black coating',
+        spots:        'Brown spots / lesions',
+        mixed:        'Mixed patterns',
+        inconclusive: 'Inconclusive — insufficient evidence',
+        unknown:      'Not detected',
+        none:         'No disease pattern'
+      };
+      if (r.predicted_health === 'healthy' || r.predicted_pattern === 'none') {
+        patternEl.textContent = 'No disease pattern';
+      } else {
+        patternEl.textContent = patternLabels[r.predicted_pattern]
+          || (r.predicted_pattern
+              ? r.predicted_pattern.charAt(0).toUpperCase() + r.predicted_pattern.slice(1)
+              : 'Not detected');
+      }
 
       const colorsEl = document.getElementById('res-colors');
+      const colorsLabel = document.getElementById('res-colors-label');
       colorsEl.innerHTML = '';
-      if (r.detected_colors && r.detected_colors.length > 0) {
+      if (r.predicted_health === 'healthy') {
+        if (colorsLabel) colorsLabel.textContent = 'Disease color indicators';
+        colorsEl.innerHTML = '<span class="text-xs text-stone">None — leaf is healthy</span>';
+      } else if (r.detected_colors && r.detected_colors.length > 0) {
+        if (colorsLabel) colorsLabel.textContent = 'Colors detected in diseased area';
         r.detected_colors.forEach(c => {
           const span = document.createElement('span');
           span.className = 'badge badge-pattern capitalize';
@@ -619,7 +645,25 @@
           colorsEl.appendChild(span);
         });
       } else {
+        if (colorsLabel) colorsLabel.textContent = 'Colors detected in diseased area';
         colorsEl.innerHTML = '<span class="text-xs text-stone">No dominant disease colors detected</span>';
+      }
+
+      const notesEl = document.getElementById('res-notes');
+      if (notesEl) {
+        if (r.notes && r.notes.length > 0) {
+          notesEl.innerHTML = '';
+          r.notes.forEach(n => {
+            const p = document.createElement('p');
+            p.className = 'text-xs text-amber mt-1';
+            p.textContent = '⚠ ' + n;
+            notesEl.appendChild(p);
+          });
+          notesEl.classList.remove('hidden');
+        } else {
+          notesEl.innerHTML = '';
+          notesEl.classList.add('hidden');
+        }
       }
 
       const severityBox = document.getElementById('severity-box');
@@ -668,7 +712,10 @@
       empty.classList.add('hidden');
       diagnosisHistory.forEach(({ r, filename, time }) => {
         const healthClass = r.predicted_health === 'healthy' ? 'badge-healthy' : 'badge-unhealthy';
-        const sevClass    = `badge-${r.severity.toLowerCase()}`;
+        const sevClass    = (r.predicted_health === 'healthy' || r.severity === 'None')
+          ? 'badge-healthy' : `badge-${r.severity.toLowerCase()}`;
+        const sevText     = (r.predicted_health === 'healthy' || r.severity === 'None')
+          ? 'No disease' : r.severity;
         const div = document.createElement('div');
         div.className = 'stat-card flex items-center justify-between gap-4 cursor-default';
         div.innerHTML = `
@@ -678,7 +725,7 @@
           </div>
           <div class="flex items-center gap-2 flex-shrink-0">
             <span class="badge ${healthClass} capitalize">${r.predicted_health}</span>
-            <span class="badge ${sevClass}">${r.severity}</span>
+            <span class="badge ${sevClass}">${sevText}</span>
             <span class="text-xs text-stone">${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         `;
