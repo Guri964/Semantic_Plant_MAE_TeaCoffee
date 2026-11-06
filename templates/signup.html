@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign up — LeafScan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest:   '#1E4D2B',
+            sage:     '#4A7C59',
+            moss:     '#7FB069',
+            mist:     '#EEF4EE',
+            cream:    '#F8FAF8',
+            amber:    '#D4870A',
+            stone:    '#6B7280',
+            charcoal: '#1F2937',
+          },
+          fontFamily: {
+            sans:    ['DM Sans', 'sans-serif'],
+            display: ['DM Serif Display', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .input-field {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 0.75rem;
+      font-size: 0.9rem;
+      font-family: 'DM Sans', sans-serif;
+      color: #1F2937;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .input-field:focus {
+      border-color: #4A7C59;
+      box-shadow: 0 0 0 3px rgba(74,124,89,0.12);
+    }
+    .input-field::placeholder { color: #9CA3AF; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      background: linear-gradient(135deg, #1E4D2B, #4A7C59);
+      color: white;
+      font-weight: 600;
+      font-size: 0.9rem;
+      border: none;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .btn-primary:hover  { opacity: 0.92; }
+    .btn-primary:active { transform: scale(0.99); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fadeIn 0.5s ease forwards; }
+
+    .error-box {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: #DC2626;
+      font-size: 0.85rem;
+      display: none;
+    }
+    .error-box.visible { display: block; }
+
+    .success-box {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: #15803D;
+      font-size: 0.85rem;
+      display: none;
+    }
+    .success-box.visible { display: block; }
+
+    .strength-bar { height: 4px; background: #E5E7EB; border-radius: 2px; overflow: hidden; }
+    .strength-fill { height: 100%; border-radius: 2px; transition: width 0.3s, background 0.3s; }
+  </style>
+</head>
+<body class="font-sans bg-cream min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex min-h-[640px] fade-in">
+
+    <div class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-12 py-12">
+      <div class="mb-7">
+        <a href="/" class="lg:hidden flex items-center gap-2 mb-8">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-forest to-moss flex items-center justify-center">
+            <svg class="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+            </svg>
+          </div>
+          <span class="font-display text-lg text-forest">LeafScan</span>
+        </a>
+        <h1 class="font-display text-3xl text-charcoal mb-1">Create your account</h1>
+        <p class="text-stone text-sm">Start diagnosing your plantation leaves in minutes</p>
+      </div>
+
+      <div id="error-box"   class="error-box mb-5"></div>
+      <div id="success-box" class="success-box mb-5"></div>
+
+      <form id="signup-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-charcoal mb-1.5" for="username">Username</label>
+          <input id="username" name="username" type="text" class="input-field"
+                 placeholder="Choose a username" autocomplete="username" required />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-charcoal mb-1.5" for="password">Password</label>
+          <div class="relative">
+            <input id="password" name="password" type="password" class="input-field pr-11"
+                   placeholder="Create a password" autocomplete="new-password" required />
+            <button type="button" id="toggle-password"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-forest transition-colors"
+                    tabindex="-1">
+              <svg id="eye-icon" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+          <div class="mt-2 space-y-1">
+            <div class="strength-bar"><div id="strength-fill" class="strength-fill" style="width:0%"></div></div>
+            <p id="strength-label" class="text-xs text-stone"></p>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-charcoal mb-1.5" for="confirm_password">Confirm password</label>
+          <div class="relative">
+            <input id="confirm_password" name="confirm_password" type="password" class="input-field pr-11"
+                   placeholder="Repeat your password" autocomplete="new-password" required />
+            <button type="button" id="toggle-confirm"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 text-stone hover:text-forest transition-colors"
+                    tabindex="-1">
+              <svg id="eye-icon-2" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+              </svg>
+            </button>
+          </div>
+          <p id="match-hint" class="text-xs mt-1 hidden"></p>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn-primary mt-2">Create account</button>
+      </form>
+
+      <div class="mt-6 text-center">
+        <p class="text-stone text-sm">
+          Already have an account?
+          <a href="/login" class="text-forest font-semibold hover:underline ml-1">Log in</a>
+        </p>
+      </div>
+
+      <div class="mt-6 pt-6 border-t border-gray-100 text-center">
+        <a href="/" class="inline-flex items-center gap-1.5 text-stone text-sm hover:text-forest transition-colors">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+          </svg>
+          Back to home
+        </a>
+      </div>
+    </div>
+
+    <div class="hidden lg:block lg:w-1/2 relative">
+      <img src="https://plus.unsplash.com/premium_photo-1692049123825-8d43174c9c5c?q=80&w=800&auto=format&fit=crop"
+           alt="Tea plantation"
+           class="w-full h-full object-cover" />
+      <div class="absolute inset-0 bg-gradient-to-t from-forest/80 via-forest/30 to-transparent flex flex-col justify-between p-10">
+        <div class="flex justify-end">
+          <a href="/" class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+              </svg>
+            </div>
+            <span class="font-display text-xl text-white">LeafScan</span>
+          </a>
+        </div>
+
+        <div>
+          <p class="font-display text-3xl text-white leading-snug mb-6">
+            Join farmers who diagnose smarter
+          </p>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
+              <div class="text-2xl font-display text-white">3,327</div>
+              <div class="text-white/65 text-xs mt-0.5">Training images</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
+              <div class="text-2xl font-display text-white">16</div>
+              <div class="text-white/65 text-xs mt-0.5">Diseases covered</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
+              <div class="text-2xl font-display text-white">2</div>
+              <div class="text-white/65 text-xs mt-0.5">AI model architectures</div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
+              <div class="text-2xl font-display text-white">95.5%</div>
+              <div class="text-white/65 text-xs mt-0.5">Health accuracy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function makeToggle(btnId, inputId, iconId) {
+      document.getElementById(btnId).addEventListener('click', () => {
+        const input = document.getElementById(inputId);
+        const icon  = document.getElementById(iconId);
+        const show  = input.type === 'password';
+        input.type  = show ? 'text' : 'password';
+        icon.innerHTML = show
+          ? `<path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>`
+          : `<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`;
+      });
+    }
+    makeToggle('toggle-password', 'password',         'eye-icon');
+    makeToggle('toggle-confirm',  'confirm_password', 'eye-icon-2');
+
+    const passwordInput = document.getElementById('password');
+    const strengthFill  = document.getElementById('strength-fill');
+    const strengthLabel = document.getElementById('strength-label');
+
+    passwordInput.addEventListener('input', () => {
+      const val = passwordInput.value;
+      let score = 0;
+      if (val.length >= 6)  score++;
+      if (val.length >= 10) score++;
+      if (/[A-Z]/.test(val)) score++;
+      if (/[0-9]/.test(val)) score++;
+      if (/[^A-Za-z0-9]/.test(val)) score++;
+      const levels = [
+        { width: '0%',   color: '#E5E7EB', label: '' },
+        { width: '25%',  color: '#EF4444', label: 'Weak' },
+        { width: '50%',  color: '#F59E0B', label: 'Fair' },
+        { width: '75%',  color: '#3B82F6', label: 'Good' },
+        { width: '100%', color: '#22C55E', label: 'Strong' },
+      ];
+      const level = val.length === 0 ? 0 : Math.min(score, 4);
+      strengthFill.style.width      = levels[level].width;
+      strengthFill.style.background = levels[level].color;
+      strengthLabel.textContent     = levels[level].label;
+      strengthLabel.style.color     = levels[level].color;
+    });
+
+    const confirmInput = document.getElementById('confirm_password');
+    const matchHint    = document.getElementById('match-hint');
+    confirmInput.addEventListener('input', () => {
+      if (!confirmInput.value) { matchHint.classList.add('hidden'); return; }
+      const match = passwordInput.value === confirmInput.value;
+      matchHint.textContent = match ? 'Passwords match' : 'Passwords do not match';
+      matchHint.style.color = match ? '#15803D' : '#DC2626';
+      matchHint.classList.remove('hidden');
+    });
+
+    const form       = document.getElementById('signup-form');
+    const errorBox   = document.getElementById('error-box');
+    const successBox = document.getElementById('success-box');
+    const submitBtn  = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.classList.remove('visible');
+      successBox.classList.remove('visible');
+
+      const username         = document.getElementById('username').value.trim();
+      const password         = document.getElementById('password').value;
+      const confirm_password = document.getElementById('confirm_password').value;
+
+      if (!username || !password || !confirm_password) {
+        errorBox.textContent = 'All fields are required.';
+        errorBox.classList.add('visible'); return;
+      }
+      if (password.length < 6) {
+        errorBox.textContent = 'Password must be at least 6 characters.';
+        errorBox.classList.add('visible'); return;
+      }
+      if (password !== confirm_password) {
+        errorBox.textContent = 'Passwords do not match.';
+        errorBox.classList.add('visible'); return;
+      }
+
+      submitBtn.disabled    = true;
+      submitBtn.textContent = 'Creating account...';
+
+      try {
+        const response = await fetch('/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password, confirm_password })
+        });
+        const data = await response.json();
+        if (data.success) {
+          successBox.textContent = 'Account created. Redirecting to login...';
+          successBox.classList.add('visible');
+          setTimeout(() => { window.location.href = data.redirect; }, 1500);
+        } else {
+          errorBox.textContent = data.message || 'Something went wrong.';
+          errorBox.classList.add('visible');
+          submitBtn.disabled    = false;
+          submitBtn.textContent = 'Create account';
+        }
+      } catch {
+        errorBox.textContent = 'Something went wrong. Please try again.';
+        errorBox.classList.add('visible');
+        submitBtn.disabled    = false;
+        submitBtn.textContent = 'Create account';
+      }
+    });
+  </script>
+</body>
+</html>

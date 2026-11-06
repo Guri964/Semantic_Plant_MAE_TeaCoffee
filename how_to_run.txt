@@ -1,0 +1,37 @@
+Hi, Hope you are doing good. 
+
+Make sure to install the python 3.12.0,
+if there is any other python versions are there then uninstall 
+those and install 3.12.0 only 
+
+If you dont know how to uninstall and install, then 
+please check youtube.
+
+once ur done, download the code and unzip it 
+
+make sure u r in this directory "Semantic_ME_plant"
+
+check the python versiob by this 
+
+python --version, if its showing 3.12.0 then u r good to go
+
+then create the virtual environment by this "python -m venv env"
+it will take few seconds 
+
+once done, activate it by this ".\env\Scripts\activate"
+
+to cross check weather it is activated or not 
+
+check left side of the directory, "it will show in the env 
+by writeen as green color"
+
+once all okay 
+
+pip install -r requirements_updated 
+
+type this and enter it 
+
+once done, do this 
+
+python app.py 
+

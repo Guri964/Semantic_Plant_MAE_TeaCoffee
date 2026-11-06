@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — LeafScan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            forest:   '#1E4D2B',
+            sage:     '#4A7C59',
+            moss:     '#7FB069',
+            mist:     '#EEF4EE',
+            cream:    '#F8FAF8',
+            amber:    '#D4870A',
+            stone:    '#6B7280',
+            charcoal: '#1F2937',
+          },
+          fontFamily: {
+            sans:    ['DM Sans', 'sans-serif'],
+            display: ['DM Serif Display', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #F8FAF8; }
+
+    .sidebar {
+      width: 240px;
+      min-height: 100vh;
+      background: #fff;
+      border-right: 1px solid #E9F0E9;
+      position: fixed;
+      top: 0; left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 40;
+    }
+    .main-content { margin-left: 240px; min-height: 100vh; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #6B7280;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-decoration: none;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .nav-item:hover  { background: #EEF4EE; color: #1E4D2B; }
+    .nav-item.active { background: #EEF4EE; color: #1E4D2B; font-weight: 600; }
+
+    .upload-zone {
+      border: 2px dashed #C5DFC5;
+      border-radius: 16px;
+      background: #F8FAF8;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+    .upload-zone:hover,
+    .upload-zone.dragover { border-color: #4A7C59; background: #EEF4EE; }
+
+    .stat-card {
+      background: #fff;
+      border: 1px solid #E9F0E9;
+      border-radius: 14px;
+      padding: 18px 20px;
+    }
+
+    .metric-box {
+      background: #F8FAF8;
+      border: 1px solid #E9F0E9;
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+
+    .progress-bar-wrap {
+      height: 6px;
+      background: #E9F0E9;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4A7C59, #7FB069);
+      transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .badge-healthy    { background: #DCFCE7; color: #15803D; }
+    .badge-unhealthy  { background: #FEE2E2; color: #DC2626; }
+    .badge-mild       { background: #DCFCE7; color: #15803D; }
+    .badge-moderate   { background: #FEF9C3; color: #92400E; }
+    .badge-severe     { background: #FEE2E2; color: #DC2626; }
+    .badge-pattern    { background: #EEF4EE; color: #1E4D2B; }
+
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      color: #6B7280;
+      transition: all 0.18s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .tab-btn.active {
+      background: #fff;
+      color: #1E4D2B;
+      font-weight: 600;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid #E9F0E9;
+      border-top-color: #4A7C59;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slide-up { animation: slideUp 0.4s ease forwards; }
+
+    .result-header {
+      background: linear-gradient(135deg, #1E4D2B, #4A7C59);
+      padding: 20px 24px;
+      color: white;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: #1F2937;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 999;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      pointer-events: none;
+    }
+    .toast.show  { opacity: 1; transform: translateY(0); }
+    .toast.error { background: #DC2626; }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; }
+    }
+  </style>
+</head>
+<body class="font-sans">
+
+  <aside class="sidebar">
+    <div class="p-5 border-b border-gray-100">
+      <a href="/" class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-forest to-moss flex items-center justify-center">
+          <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+          </svg>
+        </div>
+        <span class="font-display text-lg text-forest">LeafScan</span>
+      </a>
+    </div>
+
+    <nav class="flex-1 p-4 space-y-1">
+      <button onclick="showView('diagnose')" id="nav-diagnose" class="nav-item active">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+        </svg>
+        Diagnose
+      </button>
+      <button onclick="showView('history')" id="nav-history" class="nav-item">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        History
+      </button>
+      <button onclick="showView('about')" id="nav-about" class="nav-item">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        About
+      </button>
+    </nav>
+
+    <div class="p-4 border-t border-gray-100">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-forest to-moss flex items-center justify-center text-white text-xs font-bold">
+          {{ username[0].upper() }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-charcoal truncate">{{ username }}</p>
+          <p class="text-xs text-stone">Active session</p>
+        </div>
+      </div>
+      <a href="/logout" class="nav-item text-red-500 hover:bg-red-50 hover:text-red-600">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        Log out
+      </a>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <header class="bg-white border-b border-gray-100 px-8 py-4 flex items-center justify-between sticky top-0 z-30">
+      <div>
+        <h1 class="font-semibold text-charcoal text-lg" id="page-title">Diagnose a leaf</h1>
+        <p class="text-stone text-xs" id="page-subtitle">Upload a tea or coffee leaf photo to get a diagnosis</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-forest to-moss flex items-center justify-center text-white text-xs font-bold">
+          {{ username[0].upper() }}
+        </div>
+        <span class="text-sm font-medium text-charcoal hidden sm:block">{{ username }}</span>
+      </div>
+    </header>
+
+    <div id="view-diagnose" class="p-8">
+      <div class="grid lg:grid-cols-2 gap-8 max-w-6xl">
+
+        <div class="space-y-6">
+          <div class="stat-card">
+            <div id="upload-zone" class="upload-zone flex flex-col items-center justify-center py-12 px-6 text-center"
+                 onclick="document.getElementById('file-input').click()">
+              <div id="upload-idle">
+                <div class="w-14 h-14 bg-mist rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <svg class="w-7 h-7 text-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                  </svg>
+                </div>
+                <p class="font-semibold text-charcoal mb-1">Drop your leaf photo here</p>
+                <p class="text-stone text-sm mb-4">or click to browse</p>
+                <span class="text-xs text-stone bg-gray-100 px-3 py-1 rounded-full">JPG, JPEG, PNG — max 16 MB</span>
+              </div>
+              <div id="upload-preview" class="hidden w-full">
+                <img id="preview-img" src="" alt="Preview" class="max-h-52 mx-auto rounded-xl object-contain mb-3" />
+                <p id="preview-name" class="text-sm text-stone text-center"></p>
+              </div>
+            </div>
+            <input type="file" id="file-input" accept=".jpg,.jpeg,.png" class="hidden" />
+          </div>
+
+          <div class="flex gap-3">
+            <button id="diagnose-btn" onclick="runDiagnosis()"
+                    class="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-forest to-sage text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              Run diagnosis
+            </button>
+            <button onclick="resetUpload()"
+                    class="px-4 py-3 rounded-xl border border-gray-200 text-stone hover:border-gray-300 hover:text-charcoal transition-colors" title="Clear">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="stat-card">
+            <h3 class="font-semibold text-charcoal text-sm mb-3">Supported crops</h3>
+            <div class="flex gap-3">
+              <span class="text-sm bg-mist text-forest px-4 py-1.5 rounded-full font-medium">Tea</span>
+              <span class="text-sm bg-mist text-forest px-4 py-1.5 rounded-full font-medium">Coffee</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="result-panel">
+          <div id="result-empty" class="stat-card h-full flex flex-col items-center justify-center py-20 text-center">
+            <div class="w-16 h-16 bg-mist rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-sage" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+              </svg>
+            </div>
+            <p class="font-semibold text-charcoal mb-1">No diagnosis yet</p>
+            <p class="text-stone text-sm">Upload a leaf photo and run diagnosis to see results here.</p>
+          </div>
+
+          <div id="result-loading" class="hidden stat-card h-full flex flex-col items-center justify-center py-20">
+            <div class="spinner mb-4"></div>
+            <p class="font-medium text-charcoal mb-1">Analyzing your leaf</p>
+            <p class="text-stone text-sm">Running crop detection, health analysis and color filter...</p>
+          </div>
+
+          <div id="result-output" class="hidden slide-up">
+            <div class="border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
+              <div class="result-header">
+                <div class="flex items-start justify-between gap-4">
+                  <div>
+                    <p class="text-white/70 text-xs font-medium uppercase tracking-wider mb-1">Predicted Disease</p>
+                    <h2 id="res-disease" class="font-display text-2xl text-white"></h2>
+                  </div>
+                  <div class="flex flex-col gap-2 items-end">
+                    <span id="res-health-badge"   class="badge"></span>
+                    <span id="res-severity-badge" class="badge"></span>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <span id="res-match-score" class="text-white/65 text-xs"></span>
+                </div>
+              </div>
+
+              <div class="p-6 space-y-5 bg-white">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="metric-box">
+                    <p class="text-xs text-stone mb-1">Predicted Crop</p>
+                    <p id="res-crop" class="font-semibold text-charcoal capitalize"></p>
+                    <div class="progress-bar-wrap mt-2">
+                      <div id="res-crop-bar" class="progress-bar-fill" style="width:0%"></div>
+                    </div>
+                    <p id="res-crop-conf" class="text-xs text-stone mt-1"></p>
+                  </div>
+                  <div class="metric-box">
+                    <p class="text-xs text-stone mb-1">Health Status</p>
+                    <p id="res-health" class="font-semibold text-charcoal capitalize"></p>
+                    <div class="progress-bar-wrap mt-2">
+                      <div id="res-health-bar" class="progress-bar-fill" style="width:0%"></div>
+                    </div>
+                    <p id="res-health-conf" class="text-xs text-stone mt-1"></p>
+                  </div>
+                </div>
+
+                <div class="metric-box">
+                  <p class="text-xs text-stone mb-1">Pattern detected</p>
+                  <p id="res-pattern" class="font-semibold text-charcoal capitalize"></p>
+                </div>
+
+                <div class="metric-box">
+                  <p class="text-xs text-stone mb-2">Colors detected in diseased area</p>
+                  <div id="res-colors" class="flex flex-wrap gap-1.5"></div>
+                </div>
+
+                <div class="metric-box" id="severity-box">
+                  <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs text-stone">Disease severity</p>
+                    <p id="res-severity-pct" class="text-xs font-semibold text-charcoal"></p>
+                  </div>
+                  <div class="progress-bar-wrap">
+                    <div id="res-severity-bar" class="progress-bar-fill" style="width:0%"></div>
+                  </div>
+                  <div class="flex justify-between text-xs text-stone mt-1">
+                    <span>Mild (&lt;15%)</span>
+                    <span>Moderate (15–40%)</span>
+                    <span>Severe (&gt;40%)</span>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex gap-2 bg-gray-50 p-1 rounded-lg mb-4">
+                    <button class="tab-btn active" onclick="switchTab('description', this)">Description</button>
+                    <button class="tab-btn"        onclick="switchTab('treatment', this)">Treatment</button>
+                    <button class="tab-btn"        onclick="switchTab('recommendation', this)">AI Recommendation</button>
+                  </div>
+                  <div id="tab-description"    class="text-sm text-stone leading-relaxed"></div>
+                  <div id="tab-treatment"       class="hidden text-sm text-stone leading-relaxed"></div>
+                  <div id="tab-recommendation"  class="hidden text-sm text-stone leading-relaxed"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-history" class="p-8 hidden">
+      <div class="max-w-4xl">
+        <p class="text-stone text-sm mb-6">Your previous diagnoses from this session.</p>
+        <div id="history-list" class="space-y-3"></div>
+        <div id="history-empty" class="stat-card text-center py-16 hidden">
+          <p class="text-stone text-sm">No diagnoses yet. Run your first diagnosis to see it here.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="view-about" class="p-8 hidden">
+      <div class="max-w-3xl space-y-6">
+        <div class="stat-card p-6">
+          <h3 class="font-semibold text-charcoal mb-4">How the pipeline works</h3>
+          <div class="space-y-4">
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-mist rounded-lg flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-forest">1</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-charcoal">Crop identification</p>
+                <p class="text-xs text-stone mt-0.5">EfficientNet-B4 (trained from scratch on 3,325 images) predicts whether the leaf is tea or coffee. Test accuracy: 97.90%.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-mist rounded-lg flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-forest">2</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-charcoal">Health classification</p>
+                <p class="text-xs text-stone mt-0.5">Hybrid EfficientNet-B4 + ViT-B/16 predicts healthy or unhealthy. Test accuracy: 95.50%.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-mist rounded-lg flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-forest">3</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-charcoal">Color filter + severity</p>
+                <p class="text-xs text-stone mt-0.5">OpenCV HSV color filtering detects disease colors. Severity = diseased pixels ÷ leaf pixels × 100.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-mist rounded-lg flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-forest">4</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-charcoal">Knowledge base matching</p>
+                <p class="text-xs text-stone mt-0.5">Weighted similarity — crop (50%), health (30%), color (20%) — returns the best-matching disease from a manually-researched SQLite database of 16 conditions.</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-8 h-8 bg-mist rounded-lg flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-forest">5</span>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-charcoal">AI recommendation</p>
+                <p class="text-xs text-stone mt-0.5">Groq LLM generates a practical, farmer-friendly treatment recommendation based on the diagnosed condition and severity.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div class="stat-card text-center">
+            <p class="font-display text-2xl text-forest">97.90%</p>
+            <p class="text-xs text-stone mt-1">Crop accuracy</p>
+          </div>
+          <div class="stat-card text-center">
+            <p class="font-display text-2xl text-forest">95.50%</p>
+            <p class="text-xs text-stone mt-1">Health accuracy</p>
+          </div>
+          <div class="stat-card text-center">
+            <p class="font-display text-2xl text-forest">16</p>
+            <p class="text-xs text-stone mt-1">Diseases in KB</p>
+          </div>
+          <div class="stat-card text-center">
+            <p class="font-display text-2xl text-forest">3,327</p>
+            <p class="text-xs text-stone mt-1">Training images</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    let selectedFile     = null;
+    let diagnosisHistory = [];
+
+    const fileInput     = document.getElementById('file-input');
+    const uploadZone    = document.getElementById('upload-zone');
+    const uploadIdle    = document.getElementById('upload-idle');
+    const uploadPreview = document.getElementById('upload-preview');
+    const previewImg    = document.getElementById('preview-img');
+    const previewName   = document.getElementById('preview-name');
+    const diagnoseBtn   = document.getElementById('diagnose-btn');
+
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+
+    function handleFile(file) {
+      const allowed = ['image/jpeg', 'image/jpg', 'image/png'];
+      if (!allowed.includes(file.type)) { showToast('Only JPG and PNG files are supported.', true); return; }
+      if (file.size > 16 * 1024 * 1024) { showToast('File size must be under 16 MB.', true); return; }
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        previewName.textContent = file.name;
+        uploadIdle.classList.add('hidden');
+        uploadPreview.classList.remove('hidden');
+        diagnoseBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetUpload() {
+      selectedFile = null;
+      fileInput.value = '';
+      previewImg.src = '';
+      previewName.textContent = '';
+      uploadIdle.classList.remove('hidden');
+      uploadPreview.classList.add('hidden');
+      diagnoseBtn.disabled = true;
+      document.getElementById('result-empty').classList.remove('hidden');
+      document.getElementById('result-loading').classList.add('hidden');
+      document.getElementById('result-output').classList.add('hidden');
+    }
+
+    async function runDiagnosis() {
+      if (!selectedFile) return;
+      document.getElementById('result-empty').classList.add('hidden');
+      document.getElementById('result-loading').classList.remove('hidden');
+      document.getElementById('result-output').classList.add('hidden');
+      diagnoseBtn.disabled = true;
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      try {
+        const response = await fetch('/predict', { method: 'POST', body: formData });
+        const data     = await response.json();
+        document.getElementById('result-loading').classList.add('hidden');
+
+        if (!data.success) {
+          document.getElementById('result-empty').classList.remove('hidden');
+          showToast(data.message || 'Diagnosis failed. Please try again.', true);
+          diagnoseBtn.disabled = false;
+          return;
+        }
+
+        renderResult(data.result);
+        addToHistory(data.result, selectedFile.name);
+        diagnoseBtn.disabled = false;
+
+      } catch {
+        document.getElementById('result-loading').classList.add('hidden');
+        document.getElementById('result-empty').classList.remove('hidden');
+        showToast('Connection error. Please try again.', true);
+        diagnoseBtn.disabled = false;
+      }
+    }
+
+    function renderResult(r) {
+      document.getElementById('res-disease').textContent = r.predicted_disease;
+
+      const healthBadge = document.getElementById('res-health-badge');
+      healthBadge.className = `badge ${r.predicted_health === 'healthy' ? 'badge-healthy' : 'badge-unhealthy'}`;
+      healthBadge.textContent = r.predicted_health.charAt(0).toUpperCase() + r.predicted_health.slice(1);
+
+      const sevBadge = document.getElementById('res-severity-badge');
+      sevBadge.className = `badge badge-${r.severity.toLowerCase()}`;
+      sevBadge.textContent = r.severity;
+
+      document.getElementById('res-match-score').textContent =
+        `Knowledge base match score: ${(r.match_score * 100).toFixed(0)}%`;
+
+      document.getElementById('res-crop').textContent     = r.predicted_crop;
+      document.getElementById('res-crop-conf').textContent = `${r.crop_confidence}% confidence`;
+      document.getElementById('res-crop-bar').style.width  = `${r.crop_confidence}%`;
+
+      document.getElementById('res-health').textContent     = r.predicted_health;
+      document.getElementById('res-health-conf').textContent = `${r.health_confidence}% confidence`;
+      const healthBarColor = r.predicted_health === 'healthy'
+        ? 'linear-gradient(90deg,#4A7C59,#7FB069)'
+        : 'linear-gradient(90deg,#DC2626,#F87171)';
+      const healthBar = document.getElementById('res-health-bar');
+      healthBar.style.background = healthBarColor;
+      healthBar.style.width      = `${r.health_confidence}%`;
+
+      const patternEl = document.getElementById('res-pattern');
+      patternEl.textContent = r.predicted_pattern && r.predicted_pattern !== 'none'
+        ? r.predicted_pattern.charAt(0).toUpperCase() + r.predicted_pattern.slice(1)
+        : r.predicted_health === 'healthy' ? 'No disease pattern' : 'Not detected';
+
+      const colorsEl = document.getElementById('res-colors');
+      colorsEl.innerHTML = '';
+      if (r.detected_colors && r.detected_colors.length > 0) {
+        r.detected_colors.forEach(c => {
+          const span = document.createElement('span');
+          span.className = 'badge badge-pattern capitalize';
+          span.textContent = c;
+          colorsEl.appendChild(span);
+        });
+      } else {
+        colorsEl.innerHTML = '<span class="text-xs text-stone">No dominant disease colors detected</span>';
+      }
+
+      const severityBox = document.getElementById('severity-box');
+      if (r.predicted_health === 'healthy') {
+        severityBox.classList.add('hidden');
+      } else {
+        severityBox.classList.remove('hidden');
+        document.getElementById('res-severity-pct').textContent = `${r.severity_pct}% affected`;
+        const sevBarColor = {
+          'Mild':     'linear-gradient(90deg,#4A7C59,#7FB069)',
+          'Moderate': 'linear-gradient(90deg,#D97706,#FBBF24)',
+          'Severe':   'linear-gradient(90deg,#DC2626,#F87171)'
+        }[r.severity] || 'linear-gradient(90deg,#4A7C59,#7FB069)';
+        const sevBar = document.getElementById('res-severity-bar');
+        sevBar.style.background = sevBarColor;
+        sevBar.style.width      = `${Math.min(r.severity_pct, 100)}%`;
+      }
+
+      document.getElementById('tab-description').textContent   = r.description    || 'No description available.';
+      document.getElementById('tab-treatment').textContent      = r.treatment       || 'No treatment data available.';
+      document.getElementById('tab-recommendation').textContent = r.recommendation  || 'No recommendation available.';
+
+      document.getElementById('result-output').classList.remove('hidden');
+      document.getElementById('result-output').classList.add('slide-up');
+    }
+
+    function switchTab(tab, btn) {
+      ['description', 'treatment', 'recommendation'].forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+      });
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.remove('hidden');
+      btn.classList.add('active');
+    }
+
+    function addToHistory(r, filename) {
+      diagnosisHistory.unshift({ r, filename, time: new Date() });
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list  = document.getElementById('history-list');
+      const empty = document.getElementById('history-empty');
+      list.innerHTML = '';
+      if (diagnosisHistory.length === 0) { empty.classList.remove('hidden'); return; }
+      empty.classList.add('hidden');
+      diagnosisHistory.forEach(({ r, filename, time }) => {
+        const healthClass = r.predicted_health === 'healthy' ? 'badge-healthy' : 'badge-unhealthy';
+        const sevClass    = `badge-${r.severity.toLowerCase()}`;
+        const div = document.createElement('div');
+        div.className = 'stat-card flex items-center justify-between gap-4 cursor-default';
+        div.innerHTML = `
+          <div class="flex-1 min-w-0">
+            <p class="font-semibold text-charcoal text-sm truncate">${r.predicted_disease}</p>
+            <p class="text-xs text-stone mt-0.5 truncate capitalize">${r.predicted_crop} · ${r.predicted_health} · ${filename}</p>
+          </div>
+          <div class="flex items-center gap-2 flex-shrink-0">
+            <span class="badge ${healthClass} capitalize">${r.predicted_health}</span>
+            <span class="badge ${sevClass}">${r.severity}</span>
+            <span class="text-xs text-stone">${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function showView(view) {
+      ['diagnose', 'history', 'about'].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add('hidden');
+        document.getElementById(`nav-${v}`).classList.remove('active');
+      });
+      document.getElementById(`view-${view}`).classList.remove('hidden');
+      document.getElementById(`nav-${view}`).classList.add('active');
+      const titles = {
+        diagnose: ['Diagnose a leaf', 'Upload a tea or coffee leaf photo to get a diagnosis'],
+        history:  ['Diagnosis history', 'Your previous diagnoses from this session'],
+        about:    ['About LeafScan', 'How the AI pipeline works']
+      };
+      document.getElementById('page-title').textContent    = titles[view][0];
+      document.getElementById('page-subtitle').textContent = titles[view][1];
+      if (view === 'history') renderHistory();
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className   = `toast${isError ? ' error' : ''}`;
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+  </script>
+</body>
+</html>
